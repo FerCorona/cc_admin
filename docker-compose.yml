@@ -1,10 +1,5 @@
 version: '3.8'
 
-x-common-variables: &common-variables
-  MYSQL_DATABASE: books
-  MYSQL_USER: MYSQL_USER
-  MYSQL_PASSWORD: MYSQL_PASSWORD
-
 services:
 
   nginx:
@@ -22,14 +17,9 @@ services:
     build:
       dockerfile: Dockerfile
       context: "./api"
-    depends_on:
-      - mysql_db
     volumes:
       - /app/node_modules
       - ./api:/app
-    environment:
-      <<: *common-variables
-      MYSQL_HOST_IP: mysql_db
 
   client:
     stdin_open: true

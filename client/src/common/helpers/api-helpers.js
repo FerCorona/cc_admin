@@ -5,7 +5,7 @@ import { encodeParams } from './helpers';
 const getTkn = () => localStorage.getItem('tkn');
 
 const instance = axios.create({
-  baseURL: 'http://localhost:3050/api',
+  baseURL: '/api',
   headers: {'Authorization': `Bearer ${getTkn()}`}
 });
 

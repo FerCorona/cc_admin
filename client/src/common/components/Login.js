@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Form, Input, Button } from 'antd';
+import { Form, Input, Button, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
 import { logIng } from './../helpers/api-helpers';
 
 const Login = () => {
+  const [message, setMessage] = useState({
+    message: 'Usuario o contraseña incorrectos.',
+    type: 'error',
+    showIcon: false
+  });
   const navigate = useNavigate();
+  const handleClose = () => setMessage({ ...message, showIcon: !message.showIcon});
   const onFinish = (values) => {
     const params = {
       user: values.username,
@@ -17,9 +23,21 @@ const Login = () => {
           localStorage.setItem('nombre_usuario', JSON.stringify(data.data.user));
           localStorage.setItem('tkn', data.data.token);
           navigate('/inicio', { replace: true });
+        } else {
+          setMessage({
+            ...message,
+            showIcon: true
+          });
         }
       })
-      .catch(data => console.log(data));
+      .catch(data => {
+        setMessage({
+          ...message,
+          showIcon: true,
+          message: 'Intenta mas tarde.'
+        });
+        console.log(data);
+      });
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -77,6 +95,7 @@ const Login = () => {
             Ingresar
           </Button>
         </Form.Item>
+        { message.showIcon && <Alert message={message.message} type={message.type}  closable afterClose={handleClose} />}
       </Form>
       </div>
   );

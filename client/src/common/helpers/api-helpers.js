@@ -9,20 +9,20 @@ const instance = axios.create({
   headers: {'Authorization': `Bearer ${getTkn()}`}
 });
 
+const logIng = user => instance.post(`/login`, encodeParams(user));
+
 const getProducts = () => instance.get(`/get_productos`);
 
-const getCategorias = () => instance.get(`/get_categorias`);
+const deleteProduct = product => instance.post(`/delete_product`, encodeParams(product));
 
 const updateProducto = products => instance.post(`/update_producto`, encodeParams(products));
 
-const logIng = user => instance.post(`/login`, encodeParams(user));
-
-const isAuth = user => instance.post(`/auth`);
+const getCategorias = () => instance.get(`/get_categorias`);
 
 export {
-  isAuth,
   getProducts,
   getCategorias,
   updateProducto,
+  deleteProduct,
   logIng
 };

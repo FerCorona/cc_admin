@@ -39,7 +39,8 @@ router.post('/login', (req, res) => {
       client.end();
     })
     .catch(err => {
-      console.log(err);
+      console.log('ERROR DE LOGEO ->', err);
+      res.send({ status: false });
       client.end();
    });
 });
@@ -54,7 +55,7 @@ app.get('/get_productos', middleware.ensureAuthenticated, (req, res) => {
       console.log('SE CONSULTARON LOS PRODUCTOS');
     })
     .catch(err => {
-      console.log(err);
+      console.log('ERROR AL CONSULTAR PRODUCTOS ->', err);
       client.end();
    });
 });
@@ -67,15 +68,33 @@ app.post('/update_producto', middleware.ensureAuthenticated, (req, res) => {
   data_updated.forEach(element => {
     const queryString = `UPDATE public.productos SET id_categoria=${element.id_categoria}, precio_compra=${element.precio_compra}, precio_venta=${element.precio_venta}, inventario=${element.inventario}, nombre_producto='${element.nombre_producto}' WHERE id=${element.id}`;
     client.query(queryString)
-    .then(data => {
-      res.send('OK');
-      console.log(`SE ACTUALIZO EL PRODUCTO ${user}.`);
+    .then(() => {
+      res.send({ status: true });
+      console.log(`SE ACTUALIZO EL PRODUCTO ${element.id}.`);
     })
     .catch(err => {
-      console.log(err);
-      res.send('');
+      console.log('ERROR AL EDITAR PRODUCTO ->', err);
+      res.send({ status: false });
+      client.end();
    })
   });
+});
+
+app.post('/delete_product', middleware.ensureAuthenticated, (req, res) => {
+  const product_to_delete = req.body.id_producto;
+  const client = getClient();
+  client.connect();
+  const queryString = `DELETE FROM public.productos WHERE id=${product_to_delete}`;
+  client.query(queryString)
+    .then(() => {
+      res.send({ status: true });
+      console.log(`SE BORRO EL PRODUCTO ${product_to_delete}.`);
+    })
+    .catch(err => {
+      console.log('ERROR AL BORRAR PRODUCTO ->', err);
+      res.send({ status: false });
+      client.end();
+   });
 });
 
 app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {
@@ -88,7 +107,7 @@ app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {
       console.log('SE CONSULTARON LAS CATEGORIAS');
     })
     .catch(err => {
-      console.log(err);
+      console.log('ERROR AL CONSULTAR CATEGORIAS ->', err);
       res.send('');
       client.end();
    })

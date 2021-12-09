@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Table, Input, InputNumber,
   Popconfirm, Form, Tag, Space,
-  Typography, Divider, Alert
+  Typography, Divider, Alert, Skeleton
 } from 'antd';
 
-import { getProducts, getCategorias, updateProducto } from './../helpers/api-helpers';
+import { getProducts, getCategorias, updateProducto, deleteProduct } from './../helpers/api-helpers';
 import { colorCategorias } from './../helpers/constants';
 
 import Container from './Container';
@@ -55,6 +55,7 @@ const Inventario = () => {
     type: 'success',
     showIcon: false
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -64,7 +65,7 @@ const Inventario = () => {
     .then(([ productos, categoria]) => {
       setData(productos.data);
       setCategorias(categoria.data);
-      
+      setLoading(false);
     });
   }, []);
 
@@ -81,7 +82,39 @@ const Inventario = () => {
     setEditingKey('');
   };
 
+  const eliminar = (id_producto) => {
+    setLoading(true);
+    deleteProduct({ id_producto })
+      .then(res => {
+        if (res.data.status) {
+          setMessage({
+            message: 'Se borro el producto',
+            type: 'success',
+            showIcon: true
+          });
+          setLoading(false);
+        } else {
+          setMessage({
+            message: 'Error al borrar producto',
+            type: 'error',
+            showIcon: true
+          });
+        }
+        setLoading(false);
+      })
+      .catch(e => {
+        console.log(e);
+        setMessage({
+          message: 'Intenta mas tarde',
+          type: 'error',
+          showIcon: true
+         });
+        setLoading(false);
+      });
+  };
+
   const save = async (key) => {
+    setLoading(true);
     try {
       const row = await form.validateFields();
       const newData = [...data];
@@ -93,24 +126,38 @@ const Inventario = () => {
         setData(newData);
         setEditingKey('');
         updateProducto({ productos: [ { ...item, ...row } ] })
-          .then(() => setMessage({ ...message, showIcon: true }))
-          .catch(() => setMessage({
-            message: 'Error al actualizar',
-            type: 'error',
-            showIcon: true
-          }));
+          .then(res => {
+            if (res.data.status) {
+              setMessage({ ...message, showIcon: true });
+            } else{
+              setMessage({
+                message: 'Error al actualizar producto',
+                type: 'error',
+                showIcon: true
+              });
+            }
+            setLoading(false);
+          })
+          .catch(() => {
+            setMessage({
+              message: 'Intenta mas tarde',
+              type: 'error',
+              showIcon: true
+            });
+            setLoading(false);
+          });
       } else {
         newData.push(row);
         setData(newData);
         setEditingKey('');
       }
-    } catch (errInfo) {
-      console.log(errInfo)
+    } catch (e) {
       setMessage({
         message: 'Error al actualizar',
         type: 'error',
         showIcon: true
       });
+      setLoading(false);
     }
   };
 
@@ -207,8 +254,8 @@ const Inventario = () => {
           </span>
         ) : (
           <Typography.Link disabled={editingKey !== ''} onClick={() => edit(record)}>
-            Editar
-          </Typography.Link>
+            <a>Editar</a>
+            </Typography.Link>
         );
       }
     },
@@ -216,10 +263,10 @@ const Inventario = () => {
       title: 'Eliminar',
       key: 'eliminar',
       dataIndex: 'eliminar',
-      render: (text, record) => (
-        <Space size='middle'>
-          <a>Eliminar</a>
-        </Space>
+      render: (_, record) => (
+        <Popconfirm title='Estas seguro de eliminar el producto?' onConfirm={() => eliminar(record.id)}>
+          <a className='Eliminar'>Eliminar</a>
+        </Popconfirm>
       )
     }
   ];
@@ -242,25 +289,30 @@ const Inventario = () => {
   const handleClose = () => setMessage({ ...message, showIcon: !message.showIcon});
   return (
     <Container >
-      { message.showIcon && <Alert message={message.message} type={message.type}  closable afterClose={handleClose} />}
-      <Divider orientation='left'>Inventario de productos</Divider>
-      <Form form={form} component={false}>
-        <Table
-          components={{
-            body: {
-              cell: EditableCell,
-            },
-          }}
-          bordered
-          dataSource={data}
-          columns={mergedColumns}
-          rowClassName='editable-row'
-          pagination={{
-            onChange: cancel
-          }}
-          scroll={{ x: 1500 }}
-        />
-      </Form>
+      { loading ? <Skeleton active /> : (
+        <div className='Inventario'>
+          { message.showIcon && <Alert message={message.message} type={message.type}  closable afterClose={handleClose} />}
+          <Divider orientation='left'>Inventario de productos</Divider>
+          <Form form={form} component={false}>
+            <Table
+              components={{
+                body: {
+                  cell: EditableCell,
+                },
+              }}
+              bordered
+              dataSource={data}
+              columns={mergedColumns}
+              rowClassName='editable-row'
+              pagination={{
+                onChange: cancel
+              }}
+              scroll={{ x: 1500 }}
+            />
+          </Form>
+        </div>
+      )
+      }
     </Container>
   );
 };

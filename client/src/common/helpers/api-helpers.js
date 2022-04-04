@@ -4,9 +4,13 @@ import { encodeParams } from './helpers';
 
 const getTkn = () => localStorage.getItem('tkn');
 
+export const baseURL = '/api';
+
+export const headers = { 'Authorization': `Bearer ${getTkn()} `};
+
 const instance = axios.create({
-  baseURL: '/api',
-  headers: {'Authorization': `Bearer ${getTkn()}`}
+  baseURL,
+  headers
 });
 
 const logIng = user => instance.post(`/login`, encodeParams(user));
@@ -19,10 +23,13 @@ const updateProducto = products => instance.post(`/update_producto`, encodeParam
 
 const getCategorias = () => instance.get(`/get_categorias`);
 
+const getCuadernillos = () => instance.get(`/get_cuadernillos`);
+
 export {
   getProducts,
   getCategorias,
   updateProducto,
   deleteProduct,
-  logIng
+  logIng,
+  getCuadernillos
 };

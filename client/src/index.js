@@ -11,6 +11,7 @@ import Login from './common/components/Login';
 import Inventario from './common/components/Inventario';
 import Ventas from './common/components/Ventas';
 import Comprar from './common/components/Comprar';
+import Cuadernillos from './common/components/Cuadernillos';
 
 require('./common/stylesheets/general.scss');
 
@@ -19,6 +20,7 @@ ReactDOM.render((
     <Routes>
       <Route path='/inicio' element={<Inicio />} />
       <Route path='/' element={<Login />} />
+      <Route path='/cuadernillos' element={<Cuadernillos />} />
       <Route path='/login' element={<Login />} />
       <Route path='/inventario' element={<Inventario />} />
       <Route path='/ventas' element={<Ventas />} />

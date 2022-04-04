@@ -4,14 +4,16 @@ import { Layout, Menu } from 'antd';
 
 const { Header, Content, Footer } = Layout;
 
-import { isAuth } from './../helpers/api-helpers';
-
 require('antd/dist/antd.css');
 
 const MODULOS = [
   {
     name: 'Inicio',
     to: '/inicio'
+  },
+  {
+    name: 'Cuadernillos',
+    to: '/cuadernillos'
   },
   {
     name: 'Inventario',

@@ -1,16 +1,24 @@
 const express = require('express');
+const bodyParser = require("body-parser");
 const cors = require('cors');
-const service = require('./services');
-const middleware = require('./middleware');
-const { Client } = require('pg')
-const config = require('./config');
-
+const fileUpload = require('express-fileupload');
+const { Client } = require('pg');
+const { exec } = require('child_process');
 const app = express();
 const router = express.Router();
+
+const service = require('./services');
+const middleware = require('./middleware');
+const config = require('./config');
+
+
 app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(router);
+app.use(fileUpload({ createParentPath: true }));
+app.use(express.static('files'));
+
 
 const PORT = 9117;
 const HOST = '0.0.0.0';
@@ -21,6 +29,7 @@ const connectionData = {
     rejectUnauthorized: false
   }
 };
+
 const getClient = () => new Client(connectionData);
 
 router.post('/login', (req, res) => {
@@ -97,6 +106,36 @@ app.post('/delete_product', middleware.ensureAuthenticated, (req, res) => {
    });
 });
 
+app.post('/upload_file', middleware.ensureAuthenticated, (req, res) => {
+  let file;
+  let uploadPath;
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
+  file = req.files.productos ? req.files.productos : req.files.venta;
+  uploadPath = __dirname + '/csv/' + req.headers.authorization.split(' ')[1] + '/' + (req.files.productos ? 'productos.csv' : 'venta.csv');
+  file.mv(uploadPath, function(err) {
+    if (err){
+      return res.status(500).send(err);
+    }
+    res.send('File uploaded!');
+  });
+});
+
+app.get('/get_cuadernillos', middleware.ensureAuthenticated, (req, res) => {
+  exec(`python3 ./libros.py '${req.headers.authorization.split(' ')[1]}'`, (error, stdout, stderr) => {
+    if (error) {
+        console.log(`error: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.log(`stderr: ${stderr}`);
+        return;
+    }
+    console.log(`stdout: ${stdout}`);
+  });
+});
+
 app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {
   const client = getClient();
   client.connect();
@@ -113,4 +152,4 @@ app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {
    })
 });
 
-app.listen(PORT,HOST);
+app.listen(PORT,HOST, () => console.log('Server Running.....'));

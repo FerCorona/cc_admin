@@ -7,6 +7,7 @@ import {
 
 import Container from './Container';
 
+import { saveFile } from './../helpers/helpers';
 import { getCuadernillos, baseURL, headers } from './../helpers/api-helpers';
 
 
@@ -33,7 +34,10 @@ const normFile = (e) => {
 const Cuadernillos = () => {
   const onFinish = () => {
     getCuadernillos()
-      .then(data => console.log(data));
+      .then(response => {
+        const [ __first, filename, __third ] = response.headers['content-disposition'].split('"');
+        saveFile(response.data, response.headers['content-type'], filename);
+      });
   };
   const onChange = (info) => {
     if (info.file.status !== 'uploading') {

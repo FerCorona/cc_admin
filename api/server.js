@@ -3,9 +3,10 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const { Client } = require('pg');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
+const path = require('path');
 const app = express();
-const router = express.Router();
+const router = express.Router()
 
 const service = require('./services');
 const middleware = require('./middleware');
@@ -31,6 +32,8 @@ const connectionData = {
 };
 
 const getClient = () => new Client(connectionData);
+
+const getCSVPath = req => `csv/${req.headers.authorization.split('.')[1]}/`
 
 router.post('/login', (req, res) => {
   const client = getClient();
@@ -113,27 +116,31 @@ app.post('/upload_file', middleware.ensureAuthenticated, (req, res) => {
     return res.status(400).send('No files were uploaded.');
   }
   file = req.files.productos ? req.files.productos : req.files.venta;
-  uploadPath = __dirname + '/csv/' + req.headers.authorization.split(' ')[1] + '/' + (req.files.productos ? 'productos.csv' : 'venta.csv');
+  uploadPath = `${getCSVPath(req)}${req.files.productos ? 'productos.csv' : 'venta.csv'}`;
   file.mv(uploadPath, function(err) {
     if (err){
       return res.status(500).send(err);
     }
-    res.send('File uploaded!');
+    res.send({
+      status: true
+    });
   });
 });
 
 app.get('/get_cuadernillos', middleware.ensureAuthenticated, (req, res) => {
-  exec(`python3 ./libros.py '${req.headers.authorization.split(' ')[1]}'`, (error, stdout, stderr) => {
-    if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-    }
-    console.log(`stdout: ${stdout}`);
+  let filePath = '';
+  const python = spawn('python3', ['libros.py', `${getCSVPath(req)}productos.csv`, `${getCSVPath(req)}venta.csv`, req.headers.authorization.split('.')[1] ]);
+  python.stdout.on('data', function (data) {
+    filePath = `csv/${req.headers.authorization.split('.')[1]}/LIBRO.pdf`;
   });
+  python.stderr.on('data', (data) => {
+    console.error({
+      status: false
+    });
+  });
+  python.on('close', (code) => {
+    res.download(filePath);
+ });
 });
 
 app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {

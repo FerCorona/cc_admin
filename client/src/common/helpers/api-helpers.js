@@ -23,7 +23,7 @@ const updateProducto = products => instance.post(`/update_producto`, encodeParam
 
 const getCategorias = () => instance.get(`/get_categorias`);
 
-const getCuadernillos = () => instance.get(`/get_cuadernillos`);
+const getCuadernillos = () => instance.get(`/get_cuadernillos`, { responseType: 'arraybuffer' });
 
 export {
   getProducts,

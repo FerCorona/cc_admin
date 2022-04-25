@@ -1,17 +1,13 @@
 import csv
-import sys
-import os
 from fpdf import FPDF
 import datetime
-from tkinter import *
-from functools import partial
-from tkinter import filedialog
+import sys
 
 PRODUCTOS = {}
 TOTAL_POR_PRODUCTO = {}
 TOTAL_POR_CATEGORIAS = {}
-PATH_CATALOGO = ""
-PATH_VENTA = ""
+PATH_CATALOGO = "/Users/fgarcia/Downloads/Products_20220418_20220418.csv"
+PATH_VENTA = "/Users/fgarcia/Downloads/Sales_20220422_20220422.csv"
 
 def formatKey(key):
   return key.upper().strip()
@@ -22,8 +18,9 @@ def formatMoney(money):
 def toLocal(money):
   return money.replace('.','').replace(',','.')
 
+# , 'r', encoding='utf-8'
 def cargarProductos(ruta):
-  with open(ruta+'productos.csv') as productos_file:
+  with open(ruta, 'r', encoding='utf-8') as productos_file:
     productos = csv.reader(productos_file, delimiter=',')
     line_count = 0
     for producto in productos:
@@ -36,9 +33,10 @@ def cargarProductos(ruta):
         TOTAL_POR_CATEGORIAS[producto[2]] = {}
       line_count += 1
   CATEGORIAS = list(TOTAL_POR_CATEGORIAS.keys())
+  print(CATEGORIAS)
 
-def hacerCuadernillos(ruta):
-  with open(ruta+'venta.csv') as ventas_file:
+def hacerCuadernillos(ruta, user_path):
+  with open(ruta, 'r', encoding='utf-8') as ventas_file:
     ventas = csv.reader(ventas_file, delimiter=',')
     pdf = FPDF(orientation = 'P', unit = 'mm', format='A4') 
     pdf.add_page()
@@ -59,13 +57,13 @@ def hacerCuadernillos(ruta):
           pdf.multi_cell(w = 0, h = 3, txt = venta[14], border = 0, align = 'C', fill = 0)
           pdf.multi_cell(w = 0, h = 3, txt = '', border = 0, align = 'R', fill = 0)
           pdf.set_font('Helvetica', 'B', 8) 
-          pdf.multi_cell(w = 0, h = 3, txt = f'CUADERNILLO DEL << {tomorrow.strftime("%d")} DE {tomorrow.strftime("%b").upper()} DEL {tomorrow.strftime("%Y")} >>', border = 0, align = 'C', fill = 0)
+          pdf.multi_cell(w = 0, h = 3, txt = 'CUADERNILLO', border = 0, align = 'C', fill = 0)
           pdf.multi_cell(w = 0, h = 3, txt = '', border = 0, align = 'R', fill = 0)
 
         # HEADER TABLA  
         pdf.set_font('Helvetica', 'B', 5)
         pdf.set_fill_color(244, 220, 219)
-        pdf.multi_cell(w = 0, h = 3, txt = f'PEDIDO NUMERO - {numero_pedido}', border = 0, align = 'L', fill = 0)
+        pdf.multi_cell(w = 0, h = 3, txt = 'PEDIDO NUMERO', border = 0, align = 'L', fill = 0)
         pdf.set_font('Helvetica', 'B', 5) 
         pdf.cell(w = 45, h = 3, txt = 'Cliente', border = 1, align = 'C', fill = 1)
         pdf.cell(w = 85, h = 3, txt = 'Descripcion', border = 1, align = 'C', fill = 1)
@@ -85,8 +83,9 @@ def hacerCuadernillos(ruta):
           pdf.cell(w = 45, h = 3, txt = str(venta[13].encode("ascii", "replace").decode("utf-8")), border = 1, align = 'C', fill = 0)
           pdf.cell(w = 85, h = 3, txt = str(formatKey(cant_prod[1])), border = 1, align = 'C', fill = 0)
           pdf.cell(w = 20, h = 3, txt = str(cant_prod[0]), border = 1, align = 'C', fill = 0)
-          pdf.cell(w = 20, h = 3, txt = formatMoney(PRODUCTOS[formatKey(cant_prod[1])]['precio']), border = 1, align = 'C', fill = 0)
-          sub_total = float(PRODUCTOS[formatKey(cant_prod[1])]['precio']) * int(cant_prod[0])
+          print(toLocal(PRODUCTOS[formatKey(cant_prod[1])]['precio']))
+          pdf.cell(w = 20, h = 3, txt = formatMoney(toLocal(PRODUCTOS[formatKey(cant_prod[1])]['precio'])), border = 1, align = 'C', fill = 0)
+          sub_total = float(toLocal(PRODUCTOS[formatKey(cant_prod[1])]['precio'])) * int(cant_prod[0])
           pdf.multi_cell(w = 20, h = 3, txt = formatMoney(sub_total), border = 1, align = 'R', fill = 0)
 
           # AGRUPAR PRODUCTOS
@@ -96,11 +95,11 @@ def hacerCuadernillos(ruta):
             TOTAL_POR_PRODUCTO[str(formatKey(cant_prod[1]))] = int(cant_prod[0])
 
         pdf.set_font('Helvetica', 'B', 5) 
-        pdf.multi_cell(w = 0, h = 3, txt = f' Total cajas: {total_cajas_pedido}', border = 0, align = 'R', fill = 0)
-        pdf.multi_cell(w = 0, h = 3, txt = f' Total a pagar: {formatMoney(float(toLocal(venta[6])))}', border = 0, align = 'R', fill = 0)
+        pdf.multi_cell(w = 0, h = 3, txt = ' Total cajas:', border = 0, align = 'R', fill = 0)
+        pdf.multi_cell(w = 0, h = 3, txt = ' Total a pagar:', border = 0, align = 'R', fill = 0)
       numero_pedido += 1
     pdf.set_font('Helvetica', 'B', 12) 
-    pdf.multi_cell(w = 0, h = 8, txt = f' Total del Dia: {formatMoney(total_del_dia)}', border = 0, align = 'C', fill = 0)
+    pdf.multi_cell(w = 0, h = 8, txt = ' Total del Dia: ', border = 0, align = 'C', fill = 0)
     pdf.add_page()
 
 
@@ -109,7 +108,7 @@ def hacerCuadernillos(ruta):
     pdf.multi_cell(w = 0, h = 3, txt = venta[14], border = 0, align = 'C', fill = 0)
     pdf.multi_cell(w = 0, h = 3, txt = '', border = 0, align = 'R', fill = 0)
     pdf.set_font('Helvetica', 'B', 8) 
-    pdf.multi_cell(w = 0, h = 3, txt = f'HOJA DE CARGA DEL << {tomorrow.strftime("%d")} DE {tomorrow.strftime("%b").upper()} DEL {tomorrow.strftime("%Y")} >>', border = 0, align = 'C', fill = 0)
+    pdf.multi_cell(w = 0, h = 3, txt = 'HOJA DE CARGA DEL', border = 0, align = 'C', fill = 0)
     pdf.multi_cell(w = 0, h = 6, txt = '', border = 0, align = 'R', fill = 0)
 
     # ORDENAR POR CATEGORIA
@@ -136,11 +135,13 @@ def hacerCuadernillos(ruta):
         pdf.multi_cell(w = 0, h = 5, txt = str(PRODUCTOS[producto].get('id', {})), border = 1, align = 'C', fill = 0)
     pdf.set_font('Helvetica', 'B', 12) 
     pdf.multi_cell(w = 0, h = 8, txt = '', border = 0, align = 'C', fill = 0)
-    pdf.multi_cell(w = 0, h = 8, txt = f' Total productos de la ruta: {total_cajas_pedido_ruta}', border = 0, align = 'C', fill = 0)
+    pdf.multi_cell(w = 0, h = 8, txt = ' Total productos de la ruta:', border = 0, align = 'C', fill = 0)
       
-  name_file = f'/Users/fernandogabe/Desktop/LIBRO-{tomorrow.strftime("%b%d").upper()}-{numero_ruta.upper()}.pdf'
+  name_file = 'csv/' + user_path + '/LIBRO.pdf'
   pdf.output(name_file)
 
-print('/csv/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NDA4MzI0MDgsImV4cCI6MTY0MDgzNDIwOH0.JtFe9RGscEW-3OaVYh31N8vrVo36RKGLgd9ynXsOxqE/producto.csv')
-cargarProductos('/Desktop/cc_admin/api/csv/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NDA4MzI0MDgsImV4cCI6MTY0MDgzNDIwOH0.JtFe9RGscEW-3OaVYh31N8vrVo36RKGLgd9ynXsOxqE/')
-hacerCuadernillos('/Desktop/cc_admin/api/csv/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NDA4MzI0MDgsImV4cCI6MTY0MDgzNDIwOH0.JtFe9RGscEW-3OaVYh31N8vrVo36RKGLgd9ynXsOxqE/')
+path_catalogo_sys = sys.argv[1]
+path_venta_sys = sys.argv[2]
+user_path = sys.argv[3]
+cargarProductos(path_catalogo_sys)
+hacerCuadernillos(path_venta_sys, user_path)

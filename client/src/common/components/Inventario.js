@@ -57,7 +57,7 @@ const Inventario = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = () => {
     Promise.all([
       getProducts(),
       getCategorias()
@@ -67,6 +67,10 @@ const Inventario = () => {
       setCategorias(categoria.data);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const isEditing = (record) => record.id === editingKey;
@@ -101,6 +105,7 @@ const Inventario = () => {
           });
         }
         setLoading(false);
+        fetchData();
       })
       .catch(e => {
         console.log(e);
@@ -137,6 +142,7 @@ const Inventario = () => {
               });
             }
             setLoading(false);
+            fetchData();
           })
           .catch(() => {
             setMessage({

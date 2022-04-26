@@ -129,17 +129,21 @@ app.post('/upload_file', middleware.ensureAuthenticated, (req, res) => {
 
 app.get('/get_cuadernillos', middleware.ensureAuthenticated, (req, res) => {
   let filePath = '';
-  const python = spawn('python3', ['libros.py', `${getCSVPath(req)}productos.csv`, `${getCSVPath(req)}venta.csv`, req.headers.authorization.split('.')[1] ]);
-  python.stdout.on('data', function (data) {
+  const generateCuadernillos = spawn('python3', ['libros.py', `${getCSVPath(req)}productos.csv`, `${getCSVPath(req)}venta.csv`, req.headers.authorization.split('.')[1] ]);
+  generateCuadernillos.stdout.on('data', function (data) {
     filePath = `csv/${req.headers.authorization.split('.')[1]}/LIBRO.pdf`;
   });
-  python.stderr.on('data', (data) => {
+  generateCuadernillos.stderr.on('data', (e) => {
+    console.log(e.toString())
     console.error({
       status: false
     });
   });
-  python.on('close', (code) => {
+  generateCuadernillos.on('close', (code) => {
     res.download(filePath);
+    // spawn('rm', [ '-r', `csv/${req.headers.authorization.split('.')[1]}` ]).stdout.on('data', function (data) {
+    //   console.log('ARCHIVOS BORRADOS');
+    // });
  });
 });
 

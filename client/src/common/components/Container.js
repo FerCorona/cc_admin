@@ -27,10 +27,10 @@ const MODULOS = [
     name: 'Comprar',
     to: '/comprar'
   },
-  {
-    name: 'Refrigeradores',
-    to: '/refrigeradores'
-  }
+  // {
+  //   name: 'Refrigeradores',
+  //   to: '/refrigeradores'
+  // }
 ];
 
 const Container = ({ children, extraClass }) => {

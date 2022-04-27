@@ -15,7 +15,7 @@ const instance = axios.create({
 
 const logIng = user => instance.post(`/login`, encodeParams(user));
 
-const getProducts = () => instance.get(`/get_productos`);
+const getInventario = () => instance.get(`/get_inventario`);
 
 const deleteProduct = product => instance.post(`/delete_product`, encodeParams(product));
 
@@ -25,11 +25,23 @@ const getCategorias = () => instance.get(`/get_categorias`);
 
 const getCuadernillos = () => instance.get(`/get_cuadernillos`, { responseType: 'arraybuffer' });
 
+const getVentas = params => instance.post(`/get_ventas`, encodeParams(params));
+
+const getProductos = find => instance.get(`/get_productos`);
+
+const getRutas = find => instance.get(`/get_rutas`);
+
+const getClientes = find => instance.get(`/get_clientes`);
+
 export {
-  getProducts,
+  getInventario,
   getCategorias,
   updateProducto,
   deleteProduct,
   logIng,
-  getCuadernillos
+  getCuadernillos,
+  getVentas,
+  getProductos,
+  getRutas,
+  getClientes
 };

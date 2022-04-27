@@ -5,7 +5,7 @@ import {
   Typography, Divider, Alert, Skeleton
 } from 'antd';
 
-import { getProducts, getCategorias, updateProducto, deleteProduct } from './../helpers/api-helpers';
+import { getInventario, getCategorias, updateProducto, deleteProduct } from './../helpers/api-helpers';
 import { colorCategorias } from './../helpers/constants';
 
 import Container from './Container';
@@ -59,7 +59,7 @@ const Inventario = () => {
 
   const fetchData = () => {
     Promise.all([
-      getProducts(),
+      getInventario(),
       getCategorias()
     ])
     .then(([ productos, categoria]) => {

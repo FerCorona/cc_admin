@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table, Input, InputNumber,
   Form, Tag, Space,
@@ -8,51 +8,12 @@ import {
 
 import Container from './Container';
 
+import { getVentas, getProductos, getRutas, getClientes } from './../helpers/api-helpers';
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-const dataDummy = [
-  {
-    sku: '1493578',
-    nombre: 'Coca Cola 600',
-    vendidos: 13,
-    compra: '166.90',
-    venta: '196.90',
-    ganancias: '500.00'
-  },
-  {
-    sku: '1493578',
-    nombre: 'Coca Cola 600',
-    vendidos: 13,
-    compra: '166.90',
-    venta: '196.90',
-    ganancias: '500.00'
-  },
-  {
-    sku: '1493578',
-    nombre: 'Coca Cola 600',
-    vendidos: 13,
-    compra: '166.90',
-    venta: '196.90',
-    ganancias: '500.00'
-  },
-  {
-    sku: '1493578',
-    nombre: 'Coca Cola 600',
-    vendidos: 13,
-    compra: '166.90',
-    venta: '196.90',
-    ganancias: '500.00'
-  },
-  {
-    sku: '1493578',
-    nombre: 'Coca Cola 600',
-    vendidos: 13,
-    compra: '166.90',
-    venta: '196.90',
-    ganancias: '500.00'
-  }
-];
+
 
 const EditableCell = ({
   editing,
@@ -90,12 +51,50 @@ const EditableCell = ({
 };
 
 const Ventas = () => {
-  const [form] = Form.useForm();
-  const [data, setData] = useState(dataDummy);
-  const [editingKey, setEditingKey] = useState('');
+  const [ form ] = Form.useForm();
+  const [ data, setData ] = useState([]);
+  const [ filters, setFilters ] = useState({
+    productSelectet: null,
+    rutaSelected: null,
+    clienteSelected: null,
+    fechaInicial: null,
+    fechaFinal: null
+  });
+  const [ editingKey, setEditingKey ] = useState('');
+  const [ productos, setProductos ] = useState([]);
+  const [ rutas, setRutas ] = useState([]);
+  const [ clientes, setClientes ] = useState([]);
+  const [ total, setTotal ] = useState(0);
 
   const isEditing = (record) => record.key === editingKey;
-
+  const fetchData = () => {
+    getVentas({
+      productos: filters.productSelectet,
+      rutas: filters.rutaSelected,
+      clientes: filters.clienteSelected,
+      fechaInicial: filters.fechaInicial,
+      fechaFinal: filters.fechaFinal
+    })
+    .then(data => {
+      setData(data.data);
+      setTotal(data.data.map(venta => venta.ganancias).reduce((a, b) => a + b))
+    });
+  };
+  useEffect(() => {
+    fetchData()
+  }, [ filters ]);
+  useEffect(() => {
+    Promise.all([
+      getProductos(),
+      getRutas(),
+      getClientes()
+    ])
+    .then(([ dataProductos, dataRutas, dataClientes]) => {
+      setProductos(dataProductos.data);
+      setRutas(dataRutas.data);
+      setClientes(dataClientes.data);
+    });
+  }, []);
   const edit = (record) => {
     form.setFieldsValue({
       name: '',
@@ -195,54 +194,48 @@ const Ventas = () => {
   return (
     <Container extraClass={'Ventas'} >
       <Space className={'MarginTop'} split={<Divider type="vertical" />} wrap>
-        <RangePicker size='large' align='center' />
+        <RangePicker
+          size='large'
+          align='center'
+          onChange={(_, date) => setFilters({ ...filters, fechaInicial: date[0], fechaFinal: date[1] })} />
         <Select
-          showSearch
           size='large'
           placeholder={'Selecciona un producto'}
-          onSearch={() => {}}
-          onChange={() => {}}
+          onChange={change => {
+            setFilters({ ...filters, productSelectet: change })
+          }}
           allowClear
         >
-          <Option key={'45647'}>Coca cola 600</Option>
-          <Option key={'45647'}>Coca cola 500</Option>
-          <Option key={'35647'}>Coca cola 2.5</Option>
+          {productos.map(producto => <Option key={producto.id}>{producto.nombre_producto}</Option>)}
         </Select>
         <Select
-          mode="multiple"
           style={{ width: '100%' }}
           placeholder="Selecciona una ruta"
-          onChange={() => {}}
-          optionLabelProp="label"
+          onChange={change => {
+            setFilters({ ...filters, rutaSelected: change })
+          }}
           size='large'
-        >
-          <Option value="ruta-1" label="Ruta 1">
-            <div className="demo-option-label-item">
-              Ruta 1
-            </div>
-          </Option>
-          <Option value="ruta-2" label="Ruta 2">
-            <div className="demo-option-label-item">
-              Ruta 2
-            </div>
-          </Option>
-          <Option value="ruta-3" label="Ruta 3">
-            <div className="demo-option-label-item">
-              Ruta 3
-            </div>
-          </Option>
-        </Select>
-        <Select
-          showSearch
-          size='large'
-          placeholder={'Selecciona un cliente'}
-          onSearch={() => {}}
-          onChange={() => {}}
           allowClear
         >
-          <Option key={'45647'}>Cliente 1</Option>
-          <Option key={'45647'}>Cliente 2</Option>
-          <Option key={'35647'}>Cliente 3</Option>
+          {rutas.map(ruta => (
+            <Option value={ruta.id} label={ruta.nombre}>
+              <div className="demo-option-label-item">
+                {ruta.nombre}
+              </div>
+          </Option>
+          ))}
+        </Select>
+        <Select
+          size='large'
+          placeholder={'Selecciona un cliente'}
+          onChange={change => {
+            setFilters({ ...filters, clienteSelected: change })
+          }}
+          allowClear
+        >
+          {
+            clientes.map(cliente => <Option key={cliente.id}>{cliente.nombre}</Option>)
+          }
         </Select>
       </Space>
       <Divider orientation='left'>Ventas</Divider>
@@ -260,7 +253,7 @@ const Ventas = () => {
           pagination={{
             onChange: cancel
           }}
-          footer={() => <a>Total Ganancias $ 34,789.00</a>}
+          footer={() => <a>Total Ganancias $ {total}</a>}
         />
       </Form>
     </Container>

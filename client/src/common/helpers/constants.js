@@ -14,3 +14,13 @@ export const colorCategorias = {
   ADES: '#D8BFD8',
   desconocido: 'red'
 };
+
+export const permisos = {
+  inicio: 'Inicio',
+  cuadernillos: 'Cuadernillos',
+  inventario: 'Inventario',
+  ventas: 'Ventas',
+  usuarios: 'Usuarios'
+};
+
+export const unauthorized = 'unauthorized';

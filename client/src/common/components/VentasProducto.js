@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Input, InputNumber,
-  Form, Tag, Space,
+  Form, Button, Space,
   Divider, DatePicker,
   Select
 } from 'antd';
 
 import Container from './Container';
 
-import { getVentas, getProductos, getRutas, getClientes } from './../helpers/api-helpers';
+import { getVentasProducto, getProductos, getRutas, getClientes } from '../helpers/api-helpers';
+
+import { DownloadOutlined } from '@ant-design/icons';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -50,7 +52,7 @@ const EditableCell = ({
   );
 };
 
-const Ventas = () => {
+const VentasProducto = () => {
   const [ form ] = Form.useForm();
   const [ data, setData ] = useState([]);
   const [ filters, setFilters ] = useState({
@@ -68,7 +70,7 @@ const Ventas = () => {
 
   const isEditing = (record) => record.key === editingKey;
   const fetchData = () => {
-    getVentas({
+    getVentasProducto({
       productos: filters.productSelectet,
       rutas: filters.rutaSelected,
       clientes: filters.clienteSelected,
@@ -133,44 +135,62 @@ const Ventas = () => {
   const columns = [
     {
       title: 'SKU',
-      dataIndex: 'sku',
-      key: 'sku',
+      dataIndex: 'id',
+      key: 'id',
       render: text => <a>{text}</a>,
-      sorter: true
+      sorter: {
+        compare: (a, b) => a.id - b.id,
+        multiple: 1,
+      }
     },
     {
       title: 'Nombre Producto',
       dataIndex: 'nombre',
       key: 'nombre',
-      sorter: true,
+      sorter: {
+        compare: (a, b) => a.nombre - b.nombre,
+        multiple: 2,
+      },
       editable: true
     },
     {
-      title: 'Piezas vendidas',
+      title: 'Cajas vendidas',
       dataIndex: 'vendidos',
       key: 'vendidos',
-      sorter: true,
+      sorter: {
+        compare: (a, b) => a.vendidos - b.vendidos,
+        multiple: 3,
+      },
       editable: true
     },
     {
       title: 'Precio compra',
       dataIndex: 'compra',
       key: 'compra',
-      sorter: true,
+      sorter: {
+        compare: (a, b) => a.compra - b.compra,
+        multiple: 4,
+      },
       editable: true
     },
     {
       title: 'Precio venta',
       dataIndex: 'venta',
       key: 'venta',
-      sorter: true,
+      sorter: {
+        compare: (a, b) => a.venta - b.venta,
+        multiple: 5,
+      },
       editable: true
     },
     {
       title: 'Ganancias',
       dataIndex: 'ganancias',
       key: 'ganancias',
-      sorter: true,
+      sorter: {
+        compare: (a, b) => a.ganancias - b.ganancias,
+        multiple: 6,
+      },
       editable: true
     }
   ];
@@ -237,6 +257,9 @@ const Ventas = () => {
             clientes.map(cliente => <Option key={cliente.id}>{cliente.nombre}</Option>)
           }
         </Select>
+        <Button type="primary" icon={<DownloadOutlined />} size={'large'}>
+          Descargar reporte
+        </Button>
       </Space>
       <Divider orientation='left'>Ventas</Divider>
       <Form form={form} component={false}>
@@ -260,4 +283,4 @@ const Ventas = () => {
   );
 };
 
-export default Ventas;
+export default VentasProducto;

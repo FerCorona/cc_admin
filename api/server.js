@@ -163,7 +163,7 @@ app.get('/get_categorias', middleware.ensureAuthenticated, (req, res) => {
    })
 });
 
-app.post('/get_ventas', middleware.ensureAuthenticated, (req, res) => {
+app.post('/get_ventas_producto', middleware.ensureAuthenticated, (req, res) => {
   const { productos, rutas, clientes, fechaInicial, fechaFinal } = req.body;
   let WHERE = '';
   const FILTERS = [];
@@ -186,16 +186,16 @@ app.post('/get_ventas', middleware.ensureAuthenticated, (req, res) => {
   client.connect();
   const query = `
   SELECT 
-    B.id_producto as sku,
+    C.id as id,
     C.nombre_producto as nombre,
     SUM (B.cantidad_unidades) as vendidos,
     C.precio_compra as compra,
     C.precio_venta as venta,
     ((C.precio_venta * SUM (B.cantidad_unidades)) - (C.precio_compra * SUM (B.cantidad_unidades))) as ganancias
-  FROM ((public.ventas as A INNER JOIN public.detalle_venta as B ON A.id = B.id_venta)
-  INNER JOIN public.productos as C ON C.id = B.id_producto)
+    FROM (( public.productos as C LEFT JOIN public.detalle_venta as B ON C.id = B.id_producto)
+    LEFT JOIN public.ventas as A ON A.id = B.id_venta)
   ${WHERE}
-  GROUP BY B.id_producto, C.nombre_producto, C.precio_compra, C.precio_venta
+  GROUP BY C.id, C.nombre_producto, C.precio_compra, C.precio_venta
   `;
   console.log(query);
   client.query(query)
@@ -206,6 +206,49 @@ app.post('/get_ventas', middleware.ensureAuthenticated, (req, res) => {
     })
     .catch(err => {
       console.log('ERROR AL CONSULTAR LAS VENTAS ->', err);
+      res.send('');
+      client.end();
+   })
+});
+
+app.post('/get_ventas_cliente', middleware.ensureAuthenticated, (req, res) => {
+  const { rutas, clientes, fechaInicial, fechaFinal } = req.body;
+  let WHERE = '';
+  const FILTERS = [];
+  if (rutas) {
+    FILTERS.push(` B.id_ruta = ${rutas}`);
+  }
+  if (clientes) {
+    FILTERS.push(` A.id = ${clientes}`);
+  }
+  if (fechaInicial && fechaFinal) {
+    FILTERS.push(` B.fecha_venta BETWEEN'${fechaInicial}' AND '${fechaFinal}'`);
+  }
+  if (rutas || clientes || (fechaInicial && fechaFinal)) {
+    WHERE = ` WHERE ${FILTERS.join(' AND ')}`;
+  }
+  const client = getClient();
+  client.connect();
+  const query = `
+  SELECT 
+    A.nombre_tienda,
+    SUM(C.cantidad_unidades) as cajas,
+	  MAX(B.monto_venta) as ganancias
+  FROM (((public.clientes as A LEFT JOIN public.ventas as B ON A.id = B.id_cliente)
+    LEFT JOIN public.detalle_venta as C ON B.id = C.id_venta)
+    LEFT JOIN public.productos as D ON D.id = C.id_producto)
+  ${WHERE}
+  GROUP BY A.nombre_tienda
+  `;
+  console.log(query);
+  client.query(query)
+    .then(data => {
+      res.send(data.rows);
+      client.end();
+      console.log('SE CONSULTARON LAS VENTAS POR CLIENTE');
+    })
+    .catch(err => {
+      console.log('ERROR AL CONSULTAR LAS VENTAS POR CLIENTE ->', err);
       res.send('');
       client.end();
    })
@@ -258,5 +301,130 @@ app.get('/get_clientes', middleware.ensureAuthenticated, (req, res) => {
       client.end();
    })
 });
+
+app.get('/get_usuarios', middleware.ensureAuthenticated, (req, res) => {
+  const client = getClient();
+  client.connect();
+  client.query(`SELECT * FROM public.usuarios`)
+    .then(data => {
+      res.send(data.rows);
+      client.end();
+      console.log('SE CONSULTARON LOS USUARIOS');
+    })
+    .catch(err => {
+      console.log('ERROR AL CONSULTAR LOS USUARIOS ->', err);
+      res.send('');
+      client.end();
+   })
+});
+
+app.post('/update_usuario', middleware.ensureAuthenticated, (req, res) => {
+  const user = req.body;
+  const array = user.permisos.map(permiso => `'${permiso}'`).join(',');
+  const client = getClient();
+  client.connect();
+  const queryString = `UPDATE public.usuarios 
+    SET 
+      password='${user.password}',
+      nombre='${user.nombre}',
+      mail='${user.mail}',
+      permisos=ARRAY [ ${array} ]
+    WHERE nombre_usuario='${user.nombre_usuario}'`;
+  console.log(queryString);
+  client.query(queryString)
+    .then(() => {
+      res.send({ status: true });
+      console.log(`SE ACTUALIZO EL USUARIO.`);
+    })
+    .catch(err => {
+      console.log('ERROR AL EDITAR USUARIO ->', err);
+      res.send({ status: false });
+      client.end();
+   });
+});
+
+app.post('/add_usuario', middleware.ensureAuthenticated, (req, res) => {
+  const user = req.body;
+  const array = user.permisos.map(permiso => `'${permiso}'`).join(',');
+  const client = getClient();
+  client.connect();
+  const queryString = `INSERT INTO public.usuarios(
+    nombre_usuario, password, nombre, mail, permisos)
+    VALUES ('${user.nombre_usuario}', '${user.password}', '${user.nombre}', '${user.mail}', ARRAY [ ${array} ])`;
+  console.log(queryString);
+  client.query(queryString)
+    .then(() => {
+      res.send({ status: true });
+      console.log(`SE AGREGO EL USUARIO.`);
+    })
+    .catch(err => {
+      console.log('ERROR AL AGREGO USUARIO ->', err);
+      res.send({ status: false });
+      client.end();
+   });
+});
+
+app.post('/delete_user', middleware.ensureAuthenticated, (req, res) => {
+  const user = req.body.nombre_usuario;
+  const client = getClient();
+  client.connect();
+  const strQuery = `DELETE FROM public.usuarios WHERE id='${user}'`;
+  client.query(strQuery)
+    .then(data => {
+      res.send({ status: true });
+      client.end();
+      console.log('SE ELIMINO EL USUARIO');
+    })
+    .catch(err => {
+      console.log('ERROR AL ELIMINARON EL USUARIO ->', err);
+      res.send({ status: false });
+      client.end();
+   })
+});
+
+app.post('/get_meta_mensual', middleware.ensureAuthenticated, (req, res) => {
+  const filters = req.body.nombre_usuario;
+  const client = getClient();
+  client.connect();
+  const strQuery = `SELECT 
+  B.id,
+	A.nombre,
+	B.meta_cajas
+	FROM public.categorias_generales AS A LEFT JOIN public.meta_categoria_general AS B ON A.id = B.id_categoria_general`;
+  client.query(strQuery)
+    .then(data => {
+      res.send(data.rows);
+      client.end();
+      console.log('SE CONSULTO LA META MENSUAL USUARIO');
+    })
+    .catch(err => {
+      console.log('ERROR AL CONSULTAR LA META MENSUAL ->', err);
+      res.send({ status: false });
+      client.end();
+   })
+});
+
+app.post('/update_meta_mensual', middleware.ensureAuthenticated, (req, res) => {
+  const filters = req.body;
+  console.log(filters);
+  const client = getClient();
+  client.connect();
+  const strQuery = `UPDATE public.meta_categoria_general
+    SET meta_cajas=${filters.meta_cajas}
+    WHERE id = ${filters.id}`;
+  client.query(strQuery)
+    .then(data => {
+      res.send({ status: true });
+      client.end();
+      console.log('SE CONSULTO LA META MENSUAL USUARIO');
+    })
+    .catch(err => {
+      console.log('ERROR AL CONSULTAR LA META MENSUAL ->', err);
+      res.send({ status: false });
+      client.end();
+   })
+});
+
+
 
 app.listen(PORT,HOST, () => console.log('Server Running.....'));

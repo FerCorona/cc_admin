@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { actionsCreators } from './../../state/index';
 
 import { logIng } from './../helpers/api-helpers';
 
@@ -10,6 +13,9 @@ const Login = () => {
     type: 'error',
     showIcon: false
   });
+  const dispatch = useDispatch();
+  const { setPermissions } = bindActionCreators(actionsCreators, dispatch);
+
   const navigate = useNavigate();
   const handleClose = () => setMessage({ ...message, showIcon: !message.showIcon});
   const onFinish = (values) => {
@@ -20,8 +26,8 @@ const Login = () => {
     logIng(params)
       .then(data => {
         if (data.data.status) {
-          localStorage.setItem('nombre_usuario', JSON.stringify(data.data.user));
-          localStorage.setItem('tkn', data.data.token);
+          setPermissions(data.data.user[0].permisos);
+          sessionStorage.setItem('tkn', data.data.token);
           navigate('/inicio', { replace: true });
         } else {
           setMessage({

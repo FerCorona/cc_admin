@@ -40,11 +40,14 @@ const Cuadernillos = () => {
           showIcon: true
         })
       })
-      .catch(() => setMessage({
-        message: `Error al generar el cuadernillo intenta mas tarde, si el error continua comunicate con el administrador.`,
-        type: 'error',
-        showIcon: true
-      }));
+      .catch(err => {
+        console.log(err)
+        setMessage({
+          message: `Error al generar el cuadernillo intenta mas tarde, si el error continua comunicate con el administrador.`,
+          type: 'error',
+          showIcon: true
+        });
+      });
       form.resetFields();
   };
   const onChange = (info) => {
